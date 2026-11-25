@@ -375,24 +375,7 @@ export interface LemmaDetail {
   };
 }
 
-export interface PaperSummary {
-  id: string;
-  title: string;
-  state: 'draft' | 'published' | string;
-  released_by?: string;
-  released_at?: string;
-  url?: string;
-  sections?: Array<{
-    title: string;
-    claims: Array<{ label: string; lemma_id: string; status: LemmaStatus }>;
-  }>;
-}
-
-export interface PapersData {
-  papers: PaperSummary[];
-}
-
-export interface ObservatorySnapshot {
+export interface AtlasSnapshot {
   head: HeadData;
   live: LiveData;
   map: OverviewMap;
@@ -400,7 +383,6 @@ export interface ObservatorySnapshot {
   news: NewsIndex | null;
   seats: SeatSummary[];
   calendarMonth: CalendarMonthData | null;
-  papers: PapersData | null;
   incident: IncidentData | null;
   fetchedAt: number;
 }

@@ -22,7 +22,7 @@ export const LinkedText: React.FC<LinkedTextProps> = ({
 }) => {
   const renderLemmaButton = (id: string, key: string) => {
     const status = statusOfLemma(map, id);
-    const dotClass = status ? STATUS_STYLES[status].dot : 'bg-stone-400';
+    const dotClass = status ? STATUS_STYLES[status].dot : 'bg-slate-400';
     return (
       <button
         key={key}
@@ -32,7 +32,7 @@ export const LinkedText: React.FC<LinkedTextProps> = ({
           onSelectLemma(id);
         }}
         title={status ? `${id} · ${STATUS_STYLES[status].label}` : id}
-        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 mx-0.5 font-mono text-[0.82em] font-medium bg-stone-100 hover:bg-stone-200/90 text-stone-800 border border-stone-200/90 transition-colors cursor-pointer align-baseline"
+        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 mx-0.5 font-mono text-[0.82em] font-medium bg-slate-800/90 hover:bg-sky-500/20 text-sky-200 border border-slate-700 hover:border-sky-400/50 transition-colors cursor-pointer align-baseline"
       >
         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotClass}`} />
         {id}
@@ -52,7 +52,7 @@ export const LinkedText: React.FC<LinkedTextProps> = ({
           return (
             <React.Fragment key={`b-${idx}`}>
               {renderLemmaButton(id, `bl-${idx}`)}
-              {rest ? <span className="text-stone-500"> ({rest})</span> : null}
+              {rest ? <span className="text-slate-400"> ({rest})</span> : null}
             </React.Fragment>
           );
         }

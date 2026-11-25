@@ -33,13 +33,15 @@ export function fmtShortDate(iso: string | undefined | null): string {
   if (!iso) return '—';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'UTC',
-  }) + ' UTC';
+  return (
+    d.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'UTC',
+    }) + ' UTC'
+  );
 }
 
 export function campaignDayNumber(startedAt: string | undefined, nowMs = Date.now()): number {
@@ -49,101 +51,99 @@ export function campaignDayNumber(startedAt: string | undefined, nowMs = Date.no
   return Math.max(1, Math.floor((nowMs - start) / 86_400_000) + 1);
 }
 
-// Human-friendly metadata for each program
-export const PROGRAM_META: Record<
-  string,
-  {
-    shortTitle: string;
-    color: string;
-    bgSoft: string;
-    borderSoft: string;
-    textAccent: string;
-    pnpBridge: string;
-  }
-> = {
+export interface ProgramVisualMeta {
+  shortTitle: string;
+  plainLabel: string;
+  color: string;
+  badgeClass: string;
+  pnpBridge: string;
+  roleOnMap: 'lab' | 'foundation' | 'theory' | 'p_eq_np';
+}
+
+export const PROGRAM_META: Record<string, ProgramVisualMeta> = {
   meta_complexity: {
-    shortTitle: 'Meta-Complexity',
-    color: '#B45309',
-    bgSoft: '#FFFBEB',
-    borderSoft: '#FDE68A',
-    textAccent: '#92400E',
+    shortTitle: 'Small-Circuit Lab',
+    plainLabel: 'Meta-Complexity',
+    color: '#38BDF8',
+    badgeClass: 'bg-sky-500/15 text-sky-300 border-sky-400/30',
     pnpBridge:
-      'Maps exact smallest circuits for tiny graphs to uncover patterns that could inspire a general P ≠ NP proof.',
-  },
-  gct: {
-    shortTitle: 'Geometric Complexity',
-    color: '#6D28D9',
-    bgSoft: '#F5F3FF',
-    borderSoft: '#DDD6FE',
-    textAccent: '#5B21B6',
-    pnpBridge:
-      'Uses geometry and algebra to separate two matrix functions (permanent vs. determinant), an algebraic cousin of P ≠ NP.',
-  },
-  proof_complexity: {
-    shortTitle: 'Proof Complexity',
-    color: '#0369A1',
-    bgSoft: '#F0F9FF',
-    borderSoft: '#BAE6FD',
-    textAccent: '#075985',
-    pnpBridge:
-      'Proves that stronger logical proof systems still require exponentially long proofs—a classic stepping stone toward P ≠ NP.',
-  },
-  circuit_lower_bounds: {
-    shortTitle: 'Circuit Lower Bounds',
-    color: '#C2410C',
-    bgSoft: '#FFF7ED',
-    borderSoft: '#FED7AA',
-    textAccent: '#9A3412',
-    pnpBridge:
-      'Directly attacks the 50-year linear barrier: proving SAT requires even slightly more than linear circuit size (n^1.01).',
-  },
-  p_eq_np_search: {
-    shortTitle: 'P = NP Algorithm Search',
-    color: '#0F766E',
-    bgSoft: '#F0FDFA',
-    borderSoft: '#99F6E4',
-    textAccent: '#115E59',
-    pnpBridge:
-      'Takes the opposite side: tests candidate fast SAT algorithms (which would prove P = NP) and records what breaks them.',
+      'Maps exact smallest logic circuits for tiny graphs to uncover patterns that could inspire a general P ≠ NP proof.',
+    roleOnMap: 'lab',
   },
   library: {
     shortTitle: 'Core Math Library',
-    color: '#4D7C0F',
-    bgSoft: '#F7FEE7',
-    borderSoft: '#D9F99D',
-    textAccent: '#3F6212',
+    plainLabel: 'Textbook Foundations',
+    color: '#34D399',
+    badgeClass: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30',
     pnpBridge:
-      'Formalizes foundational textbook theorems in Lean so every other research front builds on machine-checked ground.',
+      'Formalizes classic textbook computer science theorems in Lean so every other front builds on machine-checked ground.',
+    roleOnMap: 'foundation',
+  },
+  proof_complexity: {
+    shortTitle: 'Proof Complexity',
+    plainLabel: 'Refutation Length Bounds',
+    color: '#818CF8',
+    badgeClass: 'bg-indigo-500/15 text-indigo-300 border-indigo-400/30',
+    pnpBridge:
+      'Proves that stronger logical proof systems still require exponentially long proofs—a classic stepping stone toward P ≠ NP.',
+    roleOnMap: 'theory',
+  },
+  gct: {
+    shortTitle: 'Geometric Complexity',
+    plainLabel: 'Permanent vs. Determinant',
+    color: '#C084FC',
+    badgeClass: 'bg-purple-500/15 text-purple-300 border-purple-400/30',
+    pnpBridge:
+      'Uses high-dimensional algebra and geometry to separate two matrix functions, an algebraic cousin of P ≠ NP.',
+    roleOnMap: 'theory',
+  },
+  circuit_lower_bounds: {
+    shortTitle: 'Circuit Lower Bounds',
+    plainLabel: 'Algorithms → Lower Bounds',
+    color: '#FBBF24',
+    badgeClass: 'bg-amber-500/15 text-amber-300 border-amber-400/30',
+    pnpBridge:
+      'Directly attacks the 50-year linear barrier: proving SAT requires even slightly more than linear circuit size (n^1.01).',
+    roleOnMap: 'theory',
+  },
+  p_eq_np_search: {
+    shortTitle: 'P = NP Algorithm Search',
+    plainLabel: 'Fast SAT Shortcuts',
+    color: '#2DD4BF',
+    badgeClass: 'bg-teal-500/15 text-teal-300 border-teal-400/30',
+    pnpBridge:
+      'Takes the opposite bet: tests candidate fast SAT algorithms (which would prove P = NP) and kills candidates that fail.',
+    roleOnMap: 'p_eq_np',
   },
   red_team: {
     shortTitle: 'Red Team',
-    color: '#B91C1C',
-    bgSoft: '#FEF2F2',
-    borderSoft: '#FECACA',
-    textAccent: '#991B1B',
+    plainLabel: 'Adversarial Counterexamples',
+    color: '#FB7185',
+    badgeClass: 'bg-rose-500/15 text-rose-300 border-rose-400/30',
     pnpBridge:
-      'Hunts counterexamples and audits definitions to eliminate false leads quickly.',
+      'Hunts counterexamples and audits definitions to eliminate false leads rapidly.',
+    roleOnMap: 'foundation',
   },
   barrier_desk: {
     shortTitle: 'Barrier Desk',
-    color: '#475569',
-    bgSoft: '#F8FAFC',
-    borderSoft: '#CBD5E1',
-    textAccent: '#334155',
+    plainLabel: 'Barrier Verification',
+    color: '#94A3B8',
+    badgeClass: 'bg-slate-500/15 text-slate-300 border-slate-400/30',
     pnpBridge:
-      'Checks new strategies against famous complexity barriers that blocked past P ≠ NP attempts.',
+      'Checks new strategies against famous complexity barriers that blocked past P ≠ NP proofs.',
+    roleOnMap: 'foundation',
   },
 };
 
-export function programMeta(programId: string) {
+export function programMeta(programId: string): ProgramVisualMeta {
   return (
     PROGRAM_META[programId] ?? {
       shortTitle: programId.replace(/_/g, ' '),
-      color: '#52525B',
-      bgSoft: '#F4F4F5',
-      borderSoft: '#E4E4E7',
-      textAccent: '#3F3F46',
+      plainLabel: programId,
+      color: '#94A3B8',
+      badgeClass: 'bg-slate-500/15 text-slate-300 border-slate-400/30',
       pnpBridge: 'Supports the broader attack on P vs NP.',
+      roleOnMap: 'foundation',
     }
   );
 }
@@ -151,88 +151,80 @@ export function programMeta(programId: string) {
 export const AIM_LABELS: Record<ProgramAim, { label: string; className: string }> = {
   p_neq_np: {
     label: 'Aims at P ≠ NP',
-    className: 'bg-indigo-50 text-indigo-800 border-indigo-200',
+    className: 'bg-indigo-500/15 text-indigo-300 border-indigo-400/30',
   },
   p_eq_np: {
     label: 'Aims at P = NP',
-    className: 'bg-teal-50 text-teal-800 border-teal-200',
+    className: 'bg-teal-500/15 text-teal-300 border-teal-400/30',
   },
   neutral: {
-    label: 'Foundations / Both',
-    className: 'bg-stone-100 text-stone-700 border-stone-200',
+    label: 'Lab & Foundations',
+    className: 'bg-sky-500/15 text-sky-300 border-sky-400/30',
   },
 };
 
-export const STATUS_STYLES: Record<
-  LemmaStatus,
-  { label: string; pill: string; dot: string }
-> = {
+export const STATUS_STYLES: Record<LemmaStatus, { label: string; pill: string; dot: string }> = {
   checked: {
     label: 'Checked in Lean',
-    pill: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-    dot: 'bg-emerald-600',
+    pill: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30',
+    dot: 'bg-emerald-400',
   },
   in_work: {
     label: 'In Work',
-    pill: 'bg-amber-50 text-amber-800 border-amber-200',
-    dot: 'bg-amber-500',
+    pill: 'bg-amber-500/15 text-amber-300 border-amber-400/30',
+    dot: 'bg-amber-400',
   },
   conjecture: {
     label: 'Open Conjecture',
-    pill: 'bg-slate-100 text-slate-700 border-slate-200',
+    pill: 'bg-slate-500/15 text-slate-300 border-slate-500/30',
     dot: 'bg-slate-400',
   },
   refuted: {
     label: 'Refuted',
-    pill: 'bg-rose-50 text-rose-800 border-rose-200',
-    dot: 'bg-rose-600',
+    pill: 'bg-rose-500/15 text-rose-300 border-rose-400/30',
+    dot: 'bg-rose-400',
   },
   blocked: {
     label: 'Ruled Dead',
-    pill: 'bg-zinc-200 text-zinc-700 border-zinc-300',
-    dot: 'bg-zinc-500',
+    pill: 'bg-zinc-500/20 text-zinc-300 border-zinc-500/30',
+    dot: 'bg-zinc-400',
   },
   retired: {
     label: 'Retired',
-    pill: 'bg-stone-100 text-stone-500 border-stone-200',
-    dot: 'bg-stone-400',
+    pill: 'bg-slate-700/30 text-slate-400 border-slate-600/30',
+    dot: 'bg-slate-500',
   },
 };
 
 export const ATTACK_STATUS_STYLES: Record<
   AttackStatus,
-  { label: string; desc: string; pill: string; dot: string }
+  { label: string; pill: string; dot: string }
 > = {
   live: {
     label: 'Active Front',
-    desc: 'Actively being attacked right now',
-    pill: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-    dot: 'bg-emerald-500',
+    pill: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30',
+    dot: 'bg-emerald-400',
   },
   support: {
-    label: 'Supporting',
-    desc: 'Provides checked tools & bounds for active fronts',
-    pill: 'bg-sky-50 text-sky-800 border-sky-200',
-    dot: 'bg-sky-500',
+    label: 'Supporting Tool',
+    pill: 'bg-sky-500/15 text-sky-300 border-sky-400/30',
+    dot: 'bg-sky-400',
   },
   stopped: {
-    label: 'Stopped / Dead End',
-    desc: 'Tested and hit a wall or counterexample',
-    pill: 'bg-rose-50 text-rose-800 border-rose-200',
-    dot: 'bg-rose-500',
+    label: 'Dead End / Stopped',
+    pill: 'bg-rose-500/15 text-rose-300 border-rose-400/30',
+    dot: 'bg-rose-400',
   },
   dormant: {
     label: 'Dormant',
-    desc: 'Parked with partial results on the record',
-    pill: 'bg-stone-100 text-stone-600 border-stone-200',
-    dot: 'bg-stone-400',
+    pill: 'bg-slate-500/15 text-slate-400 border-slate-600/40',
+    dot: 'bg-slate-500',
   },
 };
 
-// Human-readable directory for cryptic internal seat IDs
 interface SeatHumanInfo {
   name: string;
-  team: 'Coordination & Ops' | 'Verification & Red Team' | 'Research Programs' | 'Specialists';
+  team: 'Verification & Red Team' | 'Research Fronts' | 'Coordination & Ops' | 'Specialists';
   roleSummary: string;
 }
 
@@ -240,12 +232,12 @@ const SEAT_DIRECTORY: Record<string, SeatHumanInfo> = {
   'seat-intake-1': {
     name: 'Outside Submissions Intake',
     team: 'Verification & Red Team',
-    roleSummary: 'Reviews and checks Lean proofs submitted by external contributor agents.',
+    roleSummary: 'Ingests and checks Lean proofs submitted by outside contributor agents.',
   },
   'seat-redteam-1': {
     name: 'Red Team Lead',
     team: 'Verification & Red Team',
-    roleSummary: 'Actively tries to refute claims, hunt counterexamples, and audit definitions.',
+    roleSummary: 'Actively hunts counterexamples, audits definitions, and refutes weak claims.',
   },
   'seat-redteam-2': {
     name: 'Red Team Counterexamples',
@@ -255,107 +247,107 @@ const SEAT_DIRECTORY: Record<string, SeatHumanInfo> = {
   'seat-barrier-1': {
     name: 'Complexity Barriers Desk',
     team: 'Verification & Red Team',
-    roleSummary: 'Checks proposed proof routes against relativization, natural proofs, and algebrization.',
+    roleSummary: 'Tests proposed strategies against relativization, natural proofs, and algebrization.',
   },
   'seat-news-1': {
     name: 'Fleet News & Briefings',
     team: 'Coordination & Ops',
-    roleSummary: 'Writes plain-English live situation reports and editorial dispatches.',
+    roleSummary: 'Writes periodic summaries and editorial dispatches for the hub.',
   },
   'seat-strat-1': {
     name: 'Strategy Coordinator',
     team: 'Coordination & Ops',
-    roleSummary: 'Directs research priorities and allocates attention across fronts.',
+    roleSummary: 'Directs research priorities and allocates effort across fronts.',
   },
   'seat-meth-1': {
     name: 'Methodology Desk',
     team: 'Coordination & Ops',
-    roleSummary: 'Maintains proof standards and evaluates mathematical methods.',
+    roleSummary: 'Maintains formal proof rigor and evaluates mathematical methods.',
   },
   'seat-ops-1': {
     name: 'Hub Operations',
     team: 'Coordination & Ops',
-    roleSummary: 'Manages fleet scheduling, compute queues, and intake coordination.',
+    roleSummary: 'Coordinates compute queues, task routing, and agent logistics.',
   },
   'seat-site-1': {
     name: 'Public Record Publisher',
     team: 'Coordination & Ops',
-    roleSummary: 'Exports verified hub data to the public dashboard.',
+    roleSummary: 'Exports verified hub data to the public feed.',
   },
   'seat-found-1': {
     name: 'Foundations Seat',
     team: 'Coordination & Ops',
-    roleSummary: 'Guards core complexity definitions and shared Lean axioms.',
+    roleSummary: 'Guards core formal complexity definitions and shared Lean axioms.',
   },
   'seat-meta-1': {
-    name: 'Meta-Complexity Lead',
-    team: 'Research Programs',
+    name: 'Small-Circuit Lab Lead',
+    team: 'Research Fronts',
     roleSummary: 'Leads exact small-circuit tables, plane incidence, and MCSP bounds.',
   },
   'seat-meta-2': {
-    name: 'Meta-Complexity Analyst',
-    team: 'Research Programs',
+    name: 'Small-Circuit Analyst',
+    team: 'Research Fronts',
     roleSummary: 'Explores exact edge-function circuit sizes and structural reductions.',
   },
   'seat-clb-1': {
     name: 'Circuit Lower Bounds Lead',
-    team: 'Research Programs',
+    team: 'Research Fronts',
     roleSummary: 'Works on turning faster circuit-analysis algorithms into lower bounds.',
   },
   'seat-clb-2': {
     name: 'Circuit Bounds Analyst',
-    team: 'Research Programs',
+    team: 'Research Fronts',
     roleSummary: 'Explores super-linear circuit lower-bound routes for SAT.',
   },
   'seat-pcx-1': {
     name: 'Proof Complexity Lead',
-    team: 'Research Programs',
+    team: 'Research Fronts',
     roleSummary: 'Attacks lower bounds on parity-resolution and algebraic proof systems.',
   },
   'seat-pcx-2': {
     name: 'Proof Systems Analyst',
-    team: 'Research Programs',
-    roleSummary: 'Tests proof-system refutation length bounds and small-case enumerations.',
+    team: 'Research Fronts',
+    roleSummary: 'Tests proof-system refutation bounds and small-case enumerations.',
   },
   'seat-gct-1': {
     name: 'GCT Lead (Permanent vs Det)',
-    team: 'Research Programs',
+    team: 'Research Fronts',
     roleSummary: 'Explores geometric complexity obstructions and determinantal bounds.',
   },
   'seat-gct-2': {
     name: 'GCT Level-Spaces Analyst',
-    team: 'Research Programs',
+    team: 'Research Fronts',
     roleSummary: 'Investigates level spaces where shifted permanents stay constant.',
   },
   'seat-alg-1': {
     name: 'P = NP Algorithm Search',
-    team: 'Research Programs',
+    team: 'Research Fronts',
     roleSummary: 'Tests candidate fast SAT algorithms against adversarial benchmark families.',
   },
   'seat-lib-1': {
     name: 'Core Library Lead',
-    team: 'Research Programs',
-    roleSummary: 'Formalizes foundational theorems (Cook-Levin, Ladner, hierarchies) in Lean.',
+    team: 'Research Fronts',
+    roleSummary: 'Formalizes foundational theorems (Cook-Levin, Ladner) in Lean.',
   },
   'seat-lib-2': {
     name: 'Library Formalizer',
-    team: 'Research Programs',
-    roleSummary: 'Builds reusable Lean lemmas supporting active research fronts.',
+    team: 'Research Fronts',
+    roleSummary: 'Builds reusable Lean helper lemmas supporting active fronts.',
   },
   'seat-rmag-1': {
     name: 'Hardness Magnification',
     team: 'Specialists',
-    roleSummary: 'Specialist seat exploring hardness-magnification bridges.',
+    roleSummary: 'Explores hardness-magnification bridges from weak bounds to P ≠ NP.',
   },
   'seat-ralg-1': {
     name: 'Algebraic Complexity',
     team: 'Specialists',
-    roleSummary: 'Specialist seat on algebraic circuits and polynomial identities.',
+    roleSummary: 'Specialist on algebraic circuits and polynomial identities.',
   },
   'seat-revade-1': {
     name: 'Barrier Evasion',
     team: 'Specialists',
-    roleSummary: 'Specialist seat hunting proof techniques that bypass classic barriers.',
+    roleSummary: 'Hunts proof techniques designed to bypass known barriers.',
   },
   'seat-rmine-1': {
     name: 'Structure Mining',
@@ -365,17 +357,17 @@ const SEAT_DIRECTORY: Record<string, SeatHumanInfo> = {
   'seat-rfrege-1': {
     name: 'Frege Proof Systems',
     team: 'Specialists',
-    roleSummary: 'Specialist seat studying bounded-depth and extended Frege systems.',
+    roleSummary: 'Studies bounded-depth and extended Frege proof systems.',
   },
   'seat-rlift-1': {
     name: 'Lifting Theorems',
     team: 'Specialists',
-    roleSummary: 'Specialist seat on query-to-communication and circuit lifting.',
+    roleSummary: 'Specialist on query-to-communication and circuit lifting theorems.',
   },
   'seat-rderand-1': {
     name: 'Derandomization',
     team: 'Specialists',
-    roleSummary: 'Specialist seat connecting pseudorandomness and circuit lower bounds.',
+    roleSummary: 'Connects pseudorandom generators and circuit lower bounds.',
   },
   'seat-rsat-1': {
     name: 'SAT Search & Synthesis',
@@ -385,7 +377,7 @@ const SEAT_DIRECTORY: Record<string, SeatHumanInfo> = {
   'seat-rvnp-1': {
     name: 'VP vs VNP Specialist',
     team: 'Specialists',
-    roleSummary: 'Specialist seat on Valiant’s algebraic analogue of P vs NP.',
+    roleSummary: 'Specialist on Valiant’s algebraic analogue of P vs NP.',
   },
 };
 
@@ -411,7 +403,8 @@ export function seatActivitySummary(seat: LiveSeat): {
 } {
   const act = seat.current_activity;
   if (act && act.verb && act.verb !== 'idle') {
-    const cleanTarget = act.target?.replace(/^1 (agents|messages)$/, (_, w) => `1 ${w.slice(0, -1)}`) ?? null;
+    const cleanTarget =
+      act.target?.replace(/^1 (agents|messages)$/, (_, w) => `1 ${w.slice(0, -1)}`) ?? null;
     return {
       isWorking: true,
       verb: act.verb,

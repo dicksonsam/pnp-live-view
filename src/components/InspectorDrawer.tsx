@@ -26,10 +26,11 @@ import {
   statusOfLemma,
 } from '../api/pnpClient';
 import type {
+  AtlasSnapshot,
   DrawerView,
   LemmaDetail,
   NewsArticleDetail,
-  ObservatorySnapshot,
+  NewsArticleSummary,
   SeatDetail,
 } from '../types/pnp';
 import {
@@ -49,7 +50,7 @@ import { LinkedText } from './LinkedText';
 
 interface InspectorDrawerProps {
   stack: DrawerView[];
-  snapshot: ObservatorySnapshot;
+  snapshot: AtlasSnapshot;
   nowMs: number;
   onPush: (view: DrawerView) => void;
   onPop: () => void;
@@ -79,33 +80,31 @@ export const InspectorDrawer: React.FC<InspectorDrawerProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true">
-      {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-stone-950/30 backdrop-blur-[2px] transition-opacity"
+        className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs"
         onClick={onClose}
       />
 
-      {/* Drawer Panel */}
-      <div className="animate-drawer-in relative z-10 flex h-full w-full max-w-2xl flex-col bg-[var(--color-paper)] shadow-2xl border-l border-[var(--color-hairline-strong)]">
+      <div className="animate-drawer-slide relative z-10 flex h-full w-full max-w-2xl flex-col bg-[#0B1220] border-l border-[var(--color-border-bright)] shadow-2xl">
         {/* Top bar */}
-        <div className="flex items-center justify-between gap-3 border-b border-[var(--color-hairline)] bg-white px-5 py-3.5 shrink-0">
+        <div className="flex items-center justify-between gap-3 border-b border-[var(--color-border-subtle)] bg-[#0E172A] px-5 py-3.5 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             {stack.length > 1 && (
               <button
                 type="button"
                 onClick={onPop}
-                className="inline-flex items-center gap-1 rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-1 text-xs font-medium text-stone-700 hover:bg-stone-100 cursor-pointer"
+                className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs font-medium text-slate-200 hover:border-sky-400/50 cursor-pointer"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
                 Back
               </button>
             )}
-            <span className="text-xs font-semibold uppercase tracking-wider text-stone-400 truncate">
-              {current.kind === 'program' && 'Research Front Inspector'}
+            <span className="text-[11px] font-mono font-semibold uppercase tracking-wider text-sky-400 truncate">
+              {current.kind === 'program' && 'Research Front Deep-Dive'}
               {current.kind === 'lemma' && `Lemma · ${current.lemmaId}`}
               {current.kind === 'seat' && `Orchestrator · ${current.seatId}`}
               {current.kind === 'article' && `Dispatch · ${current.article.id}`}
-              {current.kind === 'messages' && 'Inside the Hub · Live Messages'}
+              {current.kind === 'messages' && 'Raw Inter-Agent Chatter'}
               {current.kind === 'checker' && 'Lean 4 Checker · Last Hour'}
             </span>
           </div>
@@ -114,13 +113,12 @@ export const InspectorDrawer: React.FC<InspectorDrawerProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close inspector"
-            className="rounded-lg p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-800 cursor-pointer transition-colors"
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white cursor-pointer transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-5 sm:p-6">
           {current.kind === 'program' && (
             <ProgramDrawerContent
@@ -183,7 +181,7 @@ export const InspectorDrawer: React.FC<InspectorDrawerProps> = ({
 // ---------------- 1. PROGRAM DETAIL ----------------
 const ProgramDrawerContent: React.FC<{
   programId: string;
-  snapshot: ObservatorySnapshot;
+  snapshot: AtlasSnapshot;
   onSelectLemma: (id: string) => void;
   onSelectSeat: (id: string) => void;
 }> = ({ programId, snapshot, onSelectLemma, onSelectSeat }) => {
@@ -191,128 +189,122 @@ const ProgramDrawerContent: React.FC<{
   const progPlan = snapshot.plan?.programs?.[programId];
   const meta = programMeta(programId);
 
-  if (!prog) {
-    return <p className="text-sm text-stone-500">Program not found in the current snapshot.</p>;
-  }
+  if (!prog) return <p className="text-sm text-slate-400">Program not found.</p>;
 
   const aim = AIM_LABELS[prog.aims_at];
   const attacks = snapshot.map.attack.filter((a) => a.program === programId);
   const seats = snapshot.live.seats.filter((s) => s.program === programId);
   const hard = progPlan?.hard_link;
+  const hasHardLink = hard && !/^(none|no |n\/a)/i.test((hard.title ?? '').trim());
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <div className="flex flex-wrap items-center gap-2">
           <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${aim.className}`}>
             {aim.label}
           </span>
-          <span className="font-mono text-xs text-stone-400">
+          <span className="font-mono text-xs text-slate-400">
             {fmtNumber(prog.counts.checked)} checked · {fmtNumber(prog.counts.refuted)} refuted ·{' '}
             {fmtNumber(prog.counts.conjecture)} open
           </span>
         </div>
 
-        <h2 className="mt-2.5 font-serif text-2xl sm:text-3xl font-semibold text-stone-900 flex items-center gap-2.5">
+        <h2 className="mt-3 font-[var(--font-display)] text-2xl sm:text-3xl font-bold text-white flex items-center gap-2.5">
           <span className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: meta.color }} />
-          {progPlan?.short_name ?? prog.title}
+          {meta.shortTitle}
         </h2>
-        <p className="mt-2 rounded-lg bg-white border border-[var(--color-hairline)] px-3 py-2 text-xs leading-relaxed text-stone-700">
-          <strong className="font-semibold text-stone-900">How this connects to P vs NP:</strong>{' '}
+        <p className="text-xs text-slate-400 mt-0.5">{progPlan?.short_name ?? prog.title}</p>
+
+        <div className="mt-3 rounded-xl border border-sky-400/25 bg-sky-500/10 px-3.5 py-2.5 text-xs leading-relaxed text-sky-100">
+          <strong className="text-sky-300 font-semibold">How this connects to P vs NP:</strong>{' '}
           {meta.pnpBridge}
-        </p>
-        <p className="mt-2.5 text-sm leading-relaxed text-stone-700">
+        </div>
+
+        <p className="mt-3 text-sm leading-relaxed text-slate-300">
           {progPlan?.target?.plain ?? prog.goal}
         </p>
 
         {progPlan?.target?.lemma_id && (
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="text-xs text-stone-500">Target theorem:</span>
+            <span className="text-xs text-slate-500">Target theorem:</span>
             <button
               type="button"
               onClick={() => onSelectLemma(progPlan.target.lemma_id!)}
-              className="inline-flex items-center gap-1.5 rounded-md border border-stone-200 bg-white px-2.5 py-1 font-mono text-xs font-medium text-stone-800 hover:bg-stone-100 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-700 bg-slate-900 px-2.5 py-1 font-mono text-xs font-medium text-sky-300 hover:border-sky-400/50 cursor-pointer"
             >
               {progPlan.target.lemma_id}
-              <ExternalLink className="h-3 w-3 text-stone-400" />
+              <ExternalLink className="h-3 w-3" />
             </button>
           </div>
         )}
       </div>
 
-      {/* Bottleneck / Hard Link or Milestone Status */}
-      {hard && (() => {
-        const hasHardLink = !/^(none|no |n\/a)/i.test((hard.title ?? '').trim());
-        return (
-          <div
-            className={`rounded-xl border p-4 space-y-2 ${
-              hasHardLink
-                ? 'border-amber-200/90 bg-amber-50/60'
-                : 'border-emerald-200/80 bg-emerald-50/45'
-            }`}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span
-                className={`inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider ${
-                  hasHardLink ? 'text-amber-900' : 'text-emerald-900'
-                }`}
-              >
-                {hasHardLink ? (
-                  <AlertCircle className="h-4 w-4 text-amber-600" />
-                ) : (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                )}
-                {hasHardLink ? 'Current Bottleneck (Hard Link)' : 'Milestone Status'}
-              </span>
-              {hard.lemma_id && (
-                <button
-                  type="button"
-                  onClick={() => onSelectLemma(hard.lemma_id!)}
-                  className="font-mono text-xs font-medium text-amber-900 underline decoration-amber-400 underline-offset-2 cursor-pointer"
-                >
-                  {hard.lemma_id}
-                </button>
+      {/* Bottleneck / Milestone Status */}
+      {hard && (
+        <div
+          className={`rounded-xl border p-4 space-y-2 ${
+            hasHardLink
+              ? 'border-amber-400/35 bg-amber-500/10'
+              : 'border-emerald-400/30 bg-emerald-500/10'
+          }`}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <span
+              className={`inline-flex items-center gap-1.5 text-xs font-mono font-semibold uppercase tracking-wider ${
+                hasHardLink ? 'text-amber-300' : 'text-emerald-300'
+              }`}
+            >
+              {hasHardLink ? (
+                <AlertCircle className="h-4 w-4" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4" />
               )}
-            </div>
-            {hasHardLink && (
-              <p className="text-sm font-medium text-stone-900">{hard.title}</p>
-            )}
-            {hard.plain && (
-              <p className="text-xs leading-relaxed text-stone-800">{hard.plain}</p>
-            )}
-            {hard.why_hard && (
-              <p className="text-xs leading-relaxed text-stone-700">
-                <LinkedText
-                  text={hard.why_hard}
-                  map={snapshot.map}
-                  onSelectLemma={onSelectLemma}
-                />
-              </p>
-            )}
-            {hard.attempts_died && hard.attempts_died.length > 0 && (
-              <div className="pt-2 mt-2 border-t border-amber-200/70 space-y-1.5">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-amber-800/80">
-                  Recorded Dead Ends on This Link
-                </span>
-                {hard.attempts_died.map((d, idx) => (
-                  <p key={idx} className="text-xs text-stone-600 leading-relaxed">
-                    <strong className="font-mono text-stone-800">{d.by}:</strong> {d.why_died}
-                  </p>
-                ))}
-              </div>
+              {hasHardLink ? 'Current Bottleneck (Hard Link)' : 'Milestone Status'}
+            </span>
+            {hard.lemma_id && (
+              <button
+                type="button"
+                onClick={() => onSelectLemma(hard.lemma_id!)}
+                className="font-mono text-xs font-semibold text-amber-200 underline decoration-amber-400/50 cursor-pointer"
+              >
+                {hard.lemma_id}
+              </button>
             )}
           </div>
-        );
-      })()}
+          {hasHardLink && <p className="text-sm font-semibold text-white">{hard.title}</p>}
+          {hard.plain && <p className="text-xs leading-relaxed text-slate-200">{hard.plain}</p>}
+          {hard.why_hard && (
+            <p className="text-xs leading-relaxed text-slate-300">
+              <LinkedText
+                text={hard.why_hard}
+                map={snapshot.map}
+                onSelectLemma={onSelectLemma}
+              />
+            </p>
+          )}
+          {hard.attempts_died && hard.attempts_died.length > 0 && (
+            <div className="pt-2 mt-2 border-t border-amber-400/20 space-y-1.5">
+              <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-amber-300/80">
+                Recorded Dead Ends
+              </span>
+              {hard.attempts_died.map((d, idx) => (
+                <p key={idx} className="text-xs text-slate-300 leading-relaxed">
+                  <strong className="font-mono text-amber-200">{d.by}:</strong> {d.why_died}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
-      {/* Proof Chain Timeline */}
+      {/* Proof Chain */}
       {progPlan?.chain && progPlan.chain.length > 0 && (
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-500 mb-3">
+          <h3 className="text-[11px] font-mono font-semibold uppercase tracking-wider text-slate-400 mb-3">
             Proof Chain Milestones ({progPlan.chain.length} steps)
           </h3>
-          <ol className="relative border-l-2 border-stone-200 ml-2.5 space-y-3">
+          <ol className="relative border-l-2 border-slate-800 ml-2.5 space-y-3">
             {progPlan.chain.map((step, idx) => {
               const liveStatus =
                 (step.lemma_id ? statusOfLemma(snapshot.map, step.lemma_id) : null) ??
@@ -324,9 +316,9 @@ const ProgramDrawerContent: React.FC<{
               return (
                 <li key={idx} className="pl-5 relative">
                   <span
-                    className={`absolute -left-[7px] top-1.5 h-3 w-3 rounded-full ring-4 ring-[var(--color-paper)] ${style.dot}`}
+                    className={`absolute -left-[7px] top-1.5 h-3 w-3 rounded-full ring-4 ring-[#0B1220] ${style.dot}`}
                   />
-                  <div className="rounded-xl border border-[var(--color-hairline)] bg-white p-3">
+                  <div className="rounded-xl border border-[var(--color-border-subtle)] bg-slate-950/60 p-3">
                     <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
                       <span
                         className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${style.pill}`}
@@ -337,13 +329,13 @@ const ProgramDrawerContent: React.FC<{
                         <button
                           type="button"
                           onClick={() => onSelectLemma(step.lemma_id!)}
-                          className="font-mono text-xs font-medium text-stone-700 hover:text-black underline decoration-stone-300 underline-offset-2 cursor-pointer"
+                          className="font-mono text-xs font-medium text-sky-300 hover:underline cursor-pointer"
                         >
                           {step.lemma_id} →
                         </button>
                       )}
                     </div>
-                    <p className="text-xs leading-relaxed text-stone-800">{cleanTitle}</p>
+                    <p className="text-xs leading-relaxed text-slate-200">{cleanTitle}</p>
                   </div>
                 </li>
               );
@@ -355,8 +347,8 @@ const ProgramDrawerContent: React.FC<{
       {/* Associated Attack Lines */}
       {attacks.length > 0 && (
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-500 mb-2.5">
-            Attack Lines Under This Front ({attacks.length})
+          <h3 className="text-[11px] font-mono font-semibold uppercase tracking-wider text-slate-400 mb-2.5">
+            Attack Lines ({attacks.length})
           </h3>
           <div className="space-y-2">
             {attacks.map((a) => {
@@ -364,7 +356,7 @@ const ProgramDrawerContent: React.FC<{
               return (
                 <div
                   key={a.id}
-                  className="rounded-xl border border-[var(--color-hairline)] bg-white p-3.5"
+                  className="rounded-xl border border-[var(--color-border-subtle)] bg-slate-950/50 p-3.5"
                 >
                   <span
                     className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${st.pill}`}
@@ -372,8 +364,8 @@ const ProgramDrawerContent: React.FC<{
                     <span className={`h-1.5 w-1.5 rounded-full ${st.dot}`} />
                     {st.label}
                   </span>
-                  <p className="mt-1.5 text-sm font-medium text-stone-900">{a.title}</p>
-                  <p className="mt-1 text-xs text-stone-600 leading-relaxed">{a.why}</p>
+                  <p className="mt-1.5 text-sm font-semibold text-white">{a.title}</p>
+                  <p className="mt-1 text-xs text-slate-400 leading-relaxed">{a.why}</p>
                 </div>
               );
             })}
@@ -384,7 +376,7 @@ const ProgramDrawerContent: React.FC<{
       {/* Program Seats */}
       {seats.length > 0 && (
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-500 mb-2.5">
+          <h3 className="text-[11px] font-mono font-semibold uppercase tracking-wider text-slate-400 mb-2.5">
             Assigned Orchestrator Seats ({seats.length})
           </h3>
           <div className="flex flex-wrap gap-2">
@@ -396,15 +388,15 @@ const ProgramDrawerContent: React.FC<{
                   key={s.id}
                   type="button"
                   onClick={() => onSelectSeat(s.id)}
-                  className="inline-flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs hover:border-stone-400 cursor-pointer"
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs hover:border-sky-400/50 cursor-pointer"
                 >
                   <span
                     className={`h-2 w-2 rounded-full ${
-                      act.isWorking ? 'bg-emerald-500' : 'bg-stone-300'
+                      act.isWorking ? 'bg-emerald-400' : 'bg-slate-600'
                     }`}
                   />
-                  <span className="font-medium text-stone-800">{human.name}</span>
-                  <span className="font-mono text-[11px] text-stone-400">{s.id}</span>
+                  <span className="font-medium text-slate-200">{human.name}</span>
+                  <span className="font-mono text-[10px] text-slate-500">{s.id}</span>
                 </button>
               );
             })}
@@ -418,7 +410,7 @@ const ProgramDrawerContent: React.FC<{
 // ---------------- 2. LEMMA DETAIL ----------------
 const LemmaDrawerContent: React.FC<{
   lemmaId: string;
-  snapshot: ObservatorySnapshot;
+  snapshot: AtlasSnapshot;
   onSelectLemma: (id: string) => void;
   onSelectSeat: (id: string) => void;
   onSelectProgram: (id: string) => void;
@@ -438,13 +430,13 @@ const LemmaDrawerContent: React.FC<{
     fetchLemmaDetail(snapshot.map, lemmaId)
       .then((res) => {
         if (!active) return;
-        if (!res) setError('This lemma ID was not found in the published record.');
+        if (!res) setError('Lemma ID not found in the published record.');
         else setDetail(res);
         setLoading(false);
       })
       .catch((err: unknown) => {
         if (!active) return;
-        setError(err instanceof Error ? err.message : 'Failed to load lemma record.');
+        setError(err instanceof Error ? err.message : 'Failed to load lemma.');
         setLoading(false);
       });
 
@@ -455,16 +447,16 @@ const LemmaDrawerContent: React.FC<{
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 text-sm text-stone-500 gap-2">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        Fetching verified record for {lemmaId}...
+      <div className="flex items-center justify-center py-16 text-sm text-slate-400 gap-2">
+        <Loader2 className="h-4 w-4 animate-spin text-sky-400" />
+        Loading record for {lemmaId}...
       </div>
     );
   }
 
   if (error || !detail) {
     return (
-      <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+      <div className="rounded-xl border border-rose-400/35 bg-rose-500/10 p-4 text-sm text-rose-200">
         {error ?? 'Lemma not found.'}
       </div>
     );
@@ -483,10 +475,11 @@ const LemmaDrawerContent: React.FC<{
 
   return (
     <div className="space-y-5">
-      {/* Status & Metadata */}
       <div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${style.pill}`}>
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${style.pill}`}
+          >
             <span className={`h-2 w-2 rounded-full ${style.dot}`} />
             {style.label}
           </span>
@@ -494,7 +487,7 @@ const LemmaDrawerContent: React.FC<{
           <button
             type="button"
             onClick={() => onSelectProgram(detail.program)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-2.5 py-0.5 text-xs font-medium text-stone-700 hover:border-stone-400 cursor-pointer"
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900 px-2.5 py-0.5 text-xs font-medium text-slate-200 hover:border-sky-400/50 cursor-pointer"
           >
             <span className="h-2 w-2 rounded-full" style={{ backgroundColor: pMeta.color }} />
             {pMeta.shortTitle}
@@ -504,26 +497,26 @@ const LemmaDrawerContent: React.FC<{
             href={`${SITE_BASE}lemma#${detail.id}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-stone-500 hover:text-stone-900"
+            className="ml-auto inline-flex items-center gap-1 text-xs text-sky-400 hover:text-sky-300"
           >
             Open on pequalnp.com
             <ExternalLink className="h-3 w-3" />
           </a>
         </div>
 
-        <h2 className="mt-3 font-serif text-xl sm:text-2xl font-semibold leading-snug text-stone-900">
+        <h2 className="mt-3 font-[var(--font-display)] text-xl sm:text-2xl font-bold leading-snug text-white">
           {detail.title}
         </h2>
 
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-stone-500">
-          <span className="font-mono">{detail.id}</span>
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
+          <span className="font-mono text-sky-300">{detail.id}</span>
           {detail.seat && (
             <>
               <span>·</span>
               <button
                 type="button"
                 onClick={() => onSelectSeat(detail.seat!)}
-                className="underline decoration-stone-300 underline-offset-2 hover:text-stone-900 cursor-pointer"
+                className="hover:text-white underline decoration-slate-600 cursor-pointer"
               >
                 {humanizeSeat(detail.seat).name} ({detail.seat})
               </button>
@@ -538,13 +531,12 @@ const LemmaDrawerContent: React.FC<{
         </div>
       </div>
 
-      {/* Plain-English Statement */}
       {detail.plain_statement && (
-        <div className="rounded-xl border border-[var(--color-hairline)] bg-white p-4">
-          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-stone-400 mb-1.5">
+        <div className="rounded-xl border border-[var(--color-border-subtle)] bg-slate-950/60 p-4">
+          <h3 className="text-[10px] font-mono font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
             Plain-English Statement
           </h3>
-          <p className="text-sm leading-relaxed text-stone-800">
+          <p className="text-sm leading-relaxed text-slate-200">
             <LinkedText
               text={detail.plain_statement}
               map={snapshot.map}
@@ -554,23 +546,22 @@ const LemmaDrawerContent: React.FC<{
         </div>
       )}
 
-      {/* Verification Artifact & External Contributor */}
       {(detail.artifact || detail.contributor) && (
-        <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/45 p-4 space-y-2.5 text-xs">
-          <div className="flex items-center gap-1.5 font-semibold text-emerald-900">
-            <ShieldCheck className="h-4 w-4 text-emerald-600" />
-            Lean 4 Verification Record
+        <div className="rounded-xl border border-emerald-400/25 bg-emerald-500/10 p-4 space-y-2 text-xs">
+          <div className="flex items-center gap-1.5 font-semibold text-emerald-300">
+            <ShieldCheck className="h-4 w-4" />
+            Lean 4 Verification Artifact
           </div>
           {detail.contributor?.github && (
-            <div className="flex flex-wrap items-center gap-2 text-stone-700">
-              <GitPullRequest className="h-3.5 w-3.5 text-emerald-700" />
+            <div className="flex flex-wrap items-center gap-2 text-slate-200">
+              <GitPullRequest className="h-3.5 w-3.5 text-emerald-400" />
               <span>
                 Contributed by{' '}
                 <a
                   href={`https://github.com/${detail.contributor.github}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-mono font-semibold text-stone-900 underline decoration-stone-300"
+                  className="font-mono font-semibold text-sky-300 hover:underline"
                 >
                   @{detail.contributor.github}
                 </a>
@@ -580,17 +571,17 @@ const LemmaDrawerContent: React.FC<{
                   href={detail.contributor.pr_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 rounded bg-white border border-emerald-200 px-2 py-0.5 font-medium text-emerald-800 hover:bg-emerald-50"
+                  className="inline-flex items-center gap-1 rounded bg-slate-900 border border-emerald-400/30 px-2 py-0.5 text-emerald-300 hover:bg-emerald-500/20"
                 >
-                  View GitHub PR
+                  GitHub PR
                   <ExternalLink className="h-3 w-3" />
                 </a>
               )}
             </div>
           )}
           {detail.artifact?.lean_file && (
-            <div className="font-mono text-[11px] text-stone-600 break-all">
-              File: {detail.artifact.lean_file}
+            <div className="font-mono text-[11px] text-slate-400 break-all">
+              {detail.artifact.lean_file}
             </div>
           )}
           {detail.artifact?.runner_url && (
@@ -598,22 +589,21 @@ const LemmaDrawerContent: React.FC<{
               href={detail.artifact.runner_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 font-medium text-emerald-800 hover:text-emerald-950 underline decoration-emerald-300 underline-offset-2"
+              className="inline-flex items-center gap-1 font-medium text-emerald-300 hover:underline"
             >
-              Inspect Lean CI Runner Log
+              Inspect Lean CI Run
               <ExternalLink className="h-3 w-3" />
             </a>
           )}
         </div>
       )}
 
-      {/* Dependencies */}
       {((detail.depends_on && detail.depends_on.length > 0) ||
         (detail.used_by && detail.used_by.length > 0)) && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {detail.depends_on && detail.depends_on.length > 0 && (
-            <div className="rounded-xl border border-[var(--color-hairline)] bg-white p-3.5">
-              <h4 className="text-[11px] font-semibold uppercase tracking-wider text-stone-400 mb-2">
+            <div className="rounded-xl border border-[var(--color-border-subtle)] bg-slate-950/60 p-3.5">
+              <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-2">
                 Depends On ({detail.depends_on.length})
               </h4>
               <div className="flex flex-wrap gap-1.5">
@@ -624,9 +614,11 @@ const LemmaDrawerContent: React.FC<{
                       key={id}
                       type="button"
                       onClick={() => onSelectLemma(id)}
-                      className="inline-flex items-center gap-1 rounded border border-stone-200 bg-stone-50 px-2 py-0.5 font-mono text-[11px] text-stone-700 hover:bg-stone-200/70 cursor-pointer"
+                      className="inline-flex items-center gap-1 rounded border border-slate-700 bg-slate-900 px-2 py-0.5 font-mono text-[11px] text-sky-200 hover:border-sky-400/50 cursor-pointer"
                     >
-                      <span className={`h-1.5 w-1.5 rounded-full ${st ? STATUS_STYLES[st].dot : 'bg-stone-400'}`} />
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${st ? STATUS_STYLES[st].dot : 'bg-slate-400'}`}
+                      />
                       {id}
                     </button>
                   );
@@ -636,8 +628,8 @@ const LemmaDrawerContent: React.FC<{
           )}
 
           {detail.used_by && detail.used_by.length > 0 && (
-            <div className="rounded-xl border border-[var(--color-hairline)] bg-white p-3.5">
-              <h4 className="text-[11px] font-semibold uppercase tracking-wider text-stone-400 mb-2">
+            <div className="rounded-xl border border-[var(--color-border-subtle)] bg-slate-950/60 p-3.5">
+              <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-2">
                 Used By ({detail.used_by.length})
               </h4>
               <div className="flex flex-wrap gap-1.5">
@@ -648,9 +640,11 @@ const LemmaDrawerContent: React.FC<{
                       key={id}
                       type="button"
                       onClick={() => onSelectLemma(id)}
-                      className="inline-flex items-center gap-1 rounded border border-stone-200 bg-stone-50 px-2 py-0.5 font-mono text-[11px] text-stone-700 hover:bg-stone-200/70 cursor-pointer"
+                      className="inline-flex items-center gap-1 rounded border border-slate-700 bg-slate-900 px-2 py-0.5 font-mono text-[11px] text-sky-200 hover:border-sky-400/50 cursor-pointer"
                     >
-                      <span className={`h-1.5 w-1.5 rounded-full ${st ? STATUS_STYLES[st].dot : 'bg-stone-400'}`} />
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${st ? STATUS_STYLES[st].dot : 'bg-slate-400'}`}
+                      />
                       {id}
                     </button>
                   );
@@ -661,61 +655,34 @@ const LemmaDrawerContent: React.FC<{
         </div>
       )}
 
-      {/* Collapsible Formal Lean 4 Statement */}
       {detail.formal_statement && (
-        <div className="rounded-xl border border-[var(--color-hairline)] bg-white overflow-hidden">
+        <div className="rounded-xl border border-[var(--color-border-subtle)] bg-slate-950 overflow-hidden">
           <button
             type="button"
             onClick={() => setShowFormal((v) => !v)}
-            className="w-full flex items-center justify-between px-4 py-3 text-xs font-medium text-stone-700 hover:bg-stone-50 cursor-pointer"
+            className="w-full flex items-center justify-between px-4 py-3 text-xs font-medium text-slate-200 hover:bg-slate-900 cursor-pointer"
           >
             <span className="inline-flex items-center gap-2">
-              <Code2 className="h-4 w-4 text-stone-500" />
+              <Code2 className="h-4 w-4 text-sky-400" />
               Formal Lean 4 Statement
             </span>
             {showFormal ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           </button>
           {showFormal && (
-            <div className="border-t border-[var(--color-hairline)] bg-stone-900 p-4 relative">
+            <div className="border-t border-slate-800 p-4 relative bg-[#050810]">
               <button
                 type="button"
                 onClick={copyFormal}
-                className="absolute top-3 right-3 inline-flex items-center gap-1 rounded bg-stone-800 px-2 py-1 text-[11px] text-stone-300 hover:bg-stone-700 cursor-pointer"
+                className="absolute top-3 right-3 inline-flex items-center gap-1 rounded bg-slate-800 px-2 py-1 text-[11px] text-slate-200 hover:bg-slate-700 cursor-pointer"
               >
                 {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
                 {copied ? 'Copied' : 'Copy'}
               </button>
-              <pre className="font-mono text-xs leading-relaxed text-stone-200 whitespace-pre-wrap break-words pr-16">
+              <pre className="font-mono text-xs leading-relaxed text-sky-100 whitespace-pre-wrap break-words pr-16">
                 {detail.formal_statement}
               </pre>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Attempts Log */}
-      {detail.attempts && detail.attempts.length > 0 && (
-        <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-500 mb-2">
-            Attempt History ({detail.attempts.length})
-          </h3>
-          <div className="space-y-2">
-            {detail.attempts.slice(-8).reverse().map((att, idx) => (
-              <div
-                key={idx}
-                className="rounded-xl border border-[var(--color-hairline)] bg-white px-3.5 py-2.5 text-xs flex flex-col gap-1"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono font-medium text-stone-800">{att.by}</span>
-                  <span className="text-stone-400">{fmtShortDate(att.when)}</span>
-                </div>
-                <div className="text-stone-600">
-                  Outcome: <strong className="text-stone-900">{att.outcome}</strong>
-                  {att.why_died ? ` — ${att.why_died}` : ''}
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       )}
     </div>
@@ -725,7 +692,7 @@ const LemmaDrawerContent: React.FC<{
 // ---------------- 3. SEAT DETAIL ----------------
 const SeatDrawerContent: React.FC<{
   seatId: string;
-  snapshot: ObservatorySnapshot;
+  snapshot: AtlasSnapshot;
   nowMs: number;
   onSelectLemma: (id: string) => void;
   onSelectSeat: (id: string) => void;
@@ -742,9 +709,10 @@ const SeatDrawerContent: React.FC<{
     setLoading(true);
     fetchSeatDetail(snapshot.seats, seatId)
       .then((res) => {
-        if (!active) return;
-        setDetail(res);
-        setLoading(false);
+        if (active) {
+          setDetail(res);
+          setLoading(false);
+        }
       })
       .catch(() => {
         if (active) setLoading(false);
@@ -765,107 +733,80 @@ const SeatDrawerContent: React.FC<{
   return (
     <div className="space-y-6">
       <div>
-        <div className="flex items-center gap-2 text-xs text-stone-500">
-          <span className="rounded-full border border-stone-200 bg-white px-2.5 py-0.5 font-medium text-stone-700">
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          <span className="rounded-full border border-slate-700 bg-slate-900 px-2.5 py-0.5 font-medium text-sky-300">
             {human.team}
           </span>
           <span className="font-mono">{seatId}</span>
         </div>
-        <h2 className="mt-2 font-serif text-2xl font-semibold text-stone-900">{human.name}</h2>
-        <p className="mt-1.5 text-sm leading-relaxed text-stone-700">
+        <h2 className="mt-2 font-[var(--font-display)] text-2xl font-bold text-white">
+          {human.name}
+        </h2>
+        <p className="mt-1.5 text-sm leading-relaxed text-slate-300">
           {detail?.mandate ?? human.roleSummary}
         </p>
 
         {act && (
-          <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-[var(--color-hairline)] bg-white px-3 py-1.5 text-xs">
+          <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs">
             <span
               className={`h-2 w-2 rounded-full ${
-                act.isWorking ? 'bg-emerald-500 animate-live-dot' : 'bg-stone-300'
+                act.isWorking ? 'bg-emerald-400 animate-signal' : 'bg-slate-600'
               }`}
             />
-            <span className="font-medium text-stone-800">{act.label}</span>
+            <span className="font-medium text-slate-200">{act.label}</span>
             {act.since && (
-              <span className="text-stone-400">· {fmtRelativeTime(act.since, nowMs)}</span>
+              <span className="text-slate-500">· {fmtRelativeTime(act.since, nowMs)}</span>
             )}
           </div>
         )}
       </div>
 
-      {/* Lifetime Stats */}
       {detail?.counts && (
-        <div className="grid grid-cols-4 gap-2 rounded-xl border border-[var(--color-hairline)] bg-white p-3.5 text-center">
+        <div className="grid grid-cols-4 gap-2 rounded-xl border border-[var(--color-border-subtle)] bg-slate-950/60 p-3.5 text-center">
           <div>
-            <div className="font-mono text-lg font-semibold text-emerald-700 tabular-nums">
+            <div className="font-mono text-lg font-bold text-emerald-400 tabular-nums">
               {fmtNumber(detail.counts.checked)}
             </div>
-            <div className="text-[11px] text-stone-500">Checked</div>
+            <div className="text-[10px] text-slate-400">Checked</div>
           </div>
           <div>
-            <div className="font-mono text-lg font-semibold text-rose-700 tabular-nums">
+            <div className="font-mono text-lg font-bold text-rose-400 tabular-nums">
               {fmtNumber(detail.counts.refuted)}
             </div>
-            <div className="text-[11px] text-stone-500">Refuted</div>
+            <div className="text-[10px] text-slate-400">Refuted</div>
           </div>
           <div>
-            <div className="font-mono text-lg font-semibold text-stone-800 tabular-nums">
+            <div className="font-mono text-lg font-bold text-slate-200 tabular-nums">
               {fmtNumber(detail.counts.attempts)}
             </div>
-            <div className="text-[11px] text-stone-500">Attempts</div>
+            <div className="text-[10px] text-slate-400">Attempts</div>
           </div>
           <div>
-            <div className="font-mono text-lg font-semibold text-amber-700 tabular-nums">
+            <div className="font-mono text-lg font-bold text-amber-400 tabular-nums">
               {fmtNumber(detail.counts.objections_filed)}
             </div>
-            <div className="text-[11px] text-stone-500">Objections</div>
+            <div className="text-[10px] text-slate-400">Objections</div>
           </div>
         </div>
       )}
 
-      {/* Currently Held Lemmas */}
-      {liveSeat && liveSeat.holds.length > 0 && (
+      {recentMsgs.length > 0 && (
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-500 mb-2">
-            Currently Holding ({liveSeat.holds.length})
+          <h3 className="text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-2.5">
+            Recent Messages ({recentMsgs.length})
           </h3>
-          <div className="flex flex-wrap gap-1.5">
-            {liveSeat.holds.map((id) => {
-              const st = statusOfLemma(snapshot.map, id);
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => onSelectLemma(id)}
-                  className="inline-flex items-center gap-1 rounded-md border border-stone-200 bg-white px-2 py-1 font-mono text-xs text-stone-700 hover:bg-stone-100 cursor-pointer"
-                >
-                  <span className={`h-1.5 w-1.5 rounded-full ${st ? STATUS_STYLES[st].dot : 'bg-stone-400'}`} />
-                  {id}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Recent Messages */}
-      <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-500 mb-2.5">
-          Recent Messages (Last Hour · {recentMsgs.length})
-        </h3>
-        {recentMsgs.length === 0 ? (
-          <p className="text-xs text-stone-500">No public messages involving this seat in the last hour.</p>
-        ) : (
           <div className="space-y-2.5">
             {recentMsgs.map((m, idx) => (
               <div
                 key={`${m.at}-${idx}`}
-                className="rounded-xl border border-[var(--color-hairline)] bg-white p-3.5 text-xs space-y-1.5"
+                className="rounded-xl border border-[var(--color-border-subtle)] bg-slate-950/60 p-3.5 text-xs space-y-1.5"
               >
-                <div className="flex items-center justify-between gap-2 text-stone-500">
+                <div className="flex items-center justify-between text-slate-400">
                   <div className="flex items-center gap-1.5 font-mono">
                     <button
                       type="button"
                       onClick={() => onSelectSeat(m.from)}
-                      className="font-semibold text-stone-800 hover:underline cursor-pointer"
+                      className="text-sky-300 hover:underline cursor-pointer"
                     >
                       {m.from}
                     </button>
@@ -873,53 +814,52 @@ const SeatDrawerContent: React.FC<{
                     <button
                       type="button"
                       onClick={() => onSelectSeat(m.to)}
-                      className="font-semibold text-stone-800 hover:underline cursor-pointer"
+                      className="text-sky-300 hover:underline cursor-pointer"
                     >
                       {m.to}
                     </button>
                   </div>
-                  <span className="tabular-nums">
+                  <span>
                     {fmtRelativeTime(
                       new Date(Date.parse(m.at) + MESSAGE_PUBLISH_DELAY_MS).toISOString(),
                       nowMs
                     )}
                   </span>
                 </div>
-                <p className="leading-relaxed text-stone-700">
+                <p className="leading-relaxed text-slate-200">
                   <LinkedText text={m.text} map={snapshot.map} onSelectLemma={onSelectLemma} />
                 </p>
               </div>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Milestones */}
       {loading ? (
-        <div className="flex items-center gap-2 text-xs text-stone-500">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-sky-400" />
           Loading seat milestone history...
         </div>
       ) : detail?.milestones && detail.milestones.length > 0 ? (
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-500 mb-2.5">
+          <h3 className="text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-2.5">
             Recorded Milestones ({detail.milestones.length})
           </h3>
           <div className="space-y-2.5">
-            {[...detail.milestones].reverse().slice(0, 10).map((ms) => (
+            {[...detail.milestones].reverse().slice(0, 8).map((ms) => (
               <div
                 key={ms.id}
-                className="rounded-xl border border-[var(--color-hairline)] bg-white p-3.5 text-xs space-y-1.5"
+                className="rounded-xl border border-[var(--color-border-subtle)] bg-slate-950/60 p-3.5 text-xs space-y-1"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-[11px] text-stone-400">{ms.id}</span>
-                  <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[10px] text-slate-500">{ms.id}</span>
+                  <span className="rounded-full bg-emerald-500/15 border border-emerald-400/30 px-2 py-0.5 text-[10px] text-emerald-300">
                     {ms.outcome ?? ms.status}
                   </span>
                 </div>
-                <p className="font-medium text-stone-900">{ms.title}</p>
+                <p className="font-semibold text-white">{ms.title}</p>
                 {ms.conclusion && (
-                  <p className="text-stone-600 leading-relaxed">
+                  <p className="text-slate-300 leading-relaxed">
                     <LinkedText
                       text={ms.conclusion}
                       map={snapshot.map}
@@ -938,12 +878,8 @@ const SeatDrawerContent: React.FC<{
 
 // ---------------- 4. ARTICLE READER ----------------
 const ArticleDrawerContent: React.FC<{
-  summary: ObservatorySnapshot['news'] extends infer N
-    ? N extends { articles: Array<infer A> }
-      ? A
-      : never
-    : never;
-  snapshot: ObservatorySnapshot;
+  summary: NewsArticleSummary;
+  snapshot: AtlasSnapshot;
   onSelectLemma: (id: string) => void;
   onSelectSeat: (id: string) => void;
 }> = ({ summary, snapshot, onSelectLemma, onSelectSeat }) => {
@@ -955,9 +891,10 @@ const ArticleDrawerContent: React.FC<{
     setLoading(true);
     fetchArticleDetail(summary.file)
       .then((res) => {
-        if (!active) return;
-        setArticle(res);
-        setLoading(false);
+        if (active) {
+          setArticle(res);
+          setLoading(false);
+        }
       })
       .catch(() => {
         if (active) setLoading(false);
@@ -971,9 +908,9 @@ const ArticleDrawerContent: React.FC<{
 
   return (
     <article className="space-y-5">
-      <div className="border-b border-[var(--color-hairline)] pb-4">
-        <div className="flex items-center gap-2 text-xs text-stone-500">
-          <span className="inline-flex items-center gap-1.5 font-medium">
+      <div className="border-b border-[var(--color-border-subtle)] pb-4">
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          <span className="inline-flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full" style={{ backgroundColor: pMeta.color }} />
             {pMeta.shortTitle}
           </span>
@@ -981,20 +918,18 @@ const ArticleDrawerContent: React.FC<{
           <span>{fmtShortDate(summary.published_at)}</span>
         </div>
 
-        <h2 className="mt-2.5 font-serif text-2xl sm:text-3xl font-semibold leading-tight text-stone-900">
+        <h2 className="mt-2.5 font-[var(--font-display)] text-2xl font-bold leading-tight text-white">
           {summary.title}
         </h2>
-        <p className="mt-2 font-serif text-base italic text-stone-600 leading-relaxed">
-          {summary.dek}
-        </p>
+        <p className="mt-2 text-sm text-slate-300 leading-relaxed">{summary.dek}</p>
 
         {(summary.author_seat || summary.editor_seat) && (
-          <div className="mt-3 flex flex-wrap gap-3 text-xs text-stone-500">
+          <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-400">
             {summary.author_seat && (
               <button
                 type="button"
                 onClick={() => onSelectSeat(summary.author_seat!)}
-                className="hover:text-stone-900 underline decoration-stone-300 underline-offset-2 cursor-pointer"
+                className="hover:text-sky-300 underline decoration-slate-600 cursor-pointer"
               >
                 Written by {humanizeSeat(summary.author_seat).name}
               </button>
@@ -1003,7 +938,7 @@ const ArticleDrawerContent: React.FC<{
               <button
                 type="button"
                 onClick={() => onSelectSeat(summary.editor_seat!)}
-                className="hover:text-stone-900 underline decoration-stone-300 underline-offset-2 cursor-pointer"
+                className="hover:text-sky-300 underline decoration-slate-600 cursor-pointer"
               >
                 Reviewed by {humanizeSeat(summary.editor_seat).name}
               </button>
@@ -1013,18 +948,15 @@ const ArticleDrawerContent: React.FC<{
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 py-8 text-sm text-stone-500">
-          <Loader2 className="h-4 w-4 animate-spin" />
+        <div className="flex items-center gap-2 py-8 text-sm text-slate-400">
+          <Loader2 className="h-4 w-4 animate-spin text-sky-400" />
           Loading full dispatch...
         </div>
       ) : article?.body ? (
-        <div className="space-y-4 text-[15px] leading-[1.72] text-stone-800">
+        <div className="space-y-4 text-sm leading-[1.75] text-slate-200">
           {article.body.map((block, idx) =>
             block.h ? (
-              <h3
-                key={idx}
-                className="pt-2 font-serif text-lg font-semibold text-stone-950"
-              >
+              <h3 key={idx} className="pt-2 font-[var(--font-display)] text-base font-bold text-white">
                 {block.h}
               </h3>
             ) : block.p ? (
@@ -1039,16 +971,16 @@ const ArticleDrawerContent: React.FC<{
           )}
         </div>
       ) : (
-        <p className="text-sm text-stone-500">Could not load full article text.</p>
+        <p className="text-sm text-slate-400">Could not load full dispatch text.</p>
       )}
     </article>
   );
 };
 
-// ---------------- 5. LIVE MESSAGES STREAM ----------------
+// ---------------- 5. RAW INTER-AGENT MESSAGES ----------------
 const MessagesDrawerContent: React.FC<{
   initialSeat?: string;
-  snapshot: ObservatorySnapshot;
+  snapshot: AtlasSnapshot;
   nowMs: number;
   onSelectLemma: (id: string) => void;
   onSelectSeat: (id: string) => void;
@@ -1082,33 +1014,30 @@ const MessagesDrawerContent: React.FC<{
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-[var(--color-hairline)] bg-white p-3.5 text-xs text-stone-600 leading-relaxed">
-        <strong className="font-semibold text-stone-900">Raw inter-agent chatter:</strong>{' '}
-        Orchestrators talk in hypotheses and rough solver outputs; <em>only Lean-checked lemmas are verified results</em>. Published on a 3-minute delay.{' '}
+      <div className="rounded-xl border border-[var(--color-border-subtle)] bg-slate-950/70 p-3.5 text-xs text-slate-300 leading-relaxed">
+        <strong className="text-white">Unfiltered agent chatter:</strong> Agents speak in conjectures and raw solver runs—<em>only Lean-checked lemmas count as results</em>. Published on a 3-minute delay.{' '}
         {live.not_shown_last_hour ? (
-          <span className="text-stone-500">
-            ({fmtNumber(live.not_shown_last_hour)} messages were held back by the safety/isolation filter in the last hour.)
+          <span className="text-slate-400">
+            ({fmtNumber(live.not_shown_last_hour)} held back by the safety filter in the last hour.)
           </span>
         ) : null}
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-stone-400" />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search messages or lemma IDs..."
-            className="w-full rounded-lg border border-[var(--color-hairline-strong)] bg-white pl-8 pr-3 py-1.5 text-xs focus:border-stone-500 focus:outline-none"
+            className="w-full rounded-lg border border-slate-700 bg-slate-950 pl-8 pr-3 py-1.5 text-xs text-slate-100 focus:border-sky-400/60 focus:outline-none"
           />
         </div>
-
         <select
           value={seatFilter}
           onChange={(e) => setSeatFilter(e.target.value)}
-          className="rounded-lg border border-[var(--color-hairline-strong)] bg-white px-2.5 py-1.5 text-xs text-stone-700 focus:border-stone-500 focus:outline-none"
+          className="rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-slate-200 focus:border-sky-400/60 focus:outline-none"
         >
           <option value="">All seats ({live.messages.length})</option>
           {activeSeatIds.map((id) => (
@@ -1119,50 +1048,44 @@ const MessagesDrawerContent: React.FC<{
         </select>
       </div>
 
-      {live.text_off ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          The operator temporarily paused the public message stream. Verified proofs and counters continue normally.
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="py-10 text-center text-sm text-stone-500">
-          <MessageSquare className="h-6 w-6 mx-auto mb-2 text-stone-300" />
-          No messages match your filter.
+      {filtered.length === 0 ? (
+        <div className="py-10 text-center text-sm text-slate-500">
+          <MessageSquare className="h-6 w-6 mx-auto mb-2 opacity-50" />
+          No messages match that filter.
         </div>
       ) : (
         <div className="space-y-2.5">
           {filtered.map((m, idx) => (
             <div
               key={`${m.at}-${m.from}-${idx}`}
-              className="rounded-xl border border-[var(--color-hairline)] bg-white p-4 space-y-2"
+              className="rounded-xl border border-[var(--color-border-subtle)] bg-slate-950/60 p-4 space-y-2"
             >
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <button
                     type="button"
                     onClick={() => onSelectSeat(m.from)}
-                    className="font-semibold text-stone-900 hover:underline cursor-pointer"
+                    className="font-semibold text-sky-300 hover:underline cursor-pointer"
                   >
                     {humanizeSeat(m.from).name}
                   </button>
-                  <span className="font-mono text-[11px] text-stone-400">({m.from})</span>
-                  <span className="text-stone-400">→</span>
+                  <span className="text-slate-500">→</span>
                   <button
                     type="button"
                     onClick={() => onSelectSeat(m.to)}
-                    className="font-semibold text-stone-900 hover:underline cursor-pointer"
+                    className="font-semibold text-sky-300 hover:underline cursor-pointer"
                   >
                     {humanizeSeat(m.to).name}
                   </button>
                 </div>
-                <span className="font-mono text-[11px] text-stone-400 tabular-nums">
+                <span className="font-mono text-[11px] text-slate-500">
                   {fmtRelativeTime(
                     new Date(Date.parse(m.at) + MESSAGE_PUBLISH_DELAY_MS).toISOString(),
                     nowMs
                   )}
                 </span>
               </div>
-
-              <p className="text-sm leading-relaxed text-stone-700 whitespace-pre-wrap break-words">
+              <p className="text-xs sm:text-sm leading-relaxed text-slate-200 whitespace-pre-wrap break-words">
                 <LinkedText text={m.text} map={map} onSelectLemma={onSelectLemma} />
               </p>
             </div>
@@ -1173,10 +1096,10 @@ const MessagesDrawerContent: React.FC<{
   );
 };
 
-// ---------------- 6. LEAN CHECKER LOG ----------------
+// ---------------- 6. LEAN CHECKER RUNS ----------------
 const CheckerDrawerContent: React.FC<{
   initialFilter: 'all' | 'accepted' | 'rejected';
-  snapshot: ObservatorySnapshot;
+  snapshot: AtlasSnapshot;
   nowMs: number;
   onSelectLemma: (id: string) => void;
   onSelectSeat: (id: string) => void;
@@ -1212,7 +1135,7 @@ const CheckerDrawerContent: React.FC<{
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="inline-flex rounded-lg border border-[var(--color-hairline)] bg-white p-0.5 text-xs">
+        <div className="inline-flex rounded-lg border border-slate-700 bg-slate-950 p-0.5 text-xs">
           {(
             [
               { id: 'all', label: `All (${runsNewestFirst.length})` },
@@ -1225,9 +1148,7 @@ const CheckerDrawerContent: React.FC<{
               type="button"
               onClick={() => setFilter(tab.id)}
               className={`rounded-md px-2.5 py-1 font-medium cursor-pointer transition-colors ${
-                filter === tab.id
-                  ? 'bg-stone-900 text-white'
-                  : 'text-stone-600 hover:text-stone-900'
+                filter === tab.id ? 'bg-sky-500/20 text-sky-200' : 'text-slate-400 hover:text-white'
               }`}
             >
               {tab.label}
@@ -1236,62 +1157,60 @@ const CheckerDrawerContent: React.FC<{
         </div>
 
         <div className="relative flex-1 min-w-44">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-stone-400" />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Filter lemma or seat..."
-            className="w-full rounded-lg border border-[var(--color-hairline-strong)] bg-white pl-8 pr-3 py-1.5 text-xs focus:border-stone-500 focus:outline-none"
+            className="w-full rounded-lg border border-slate-700 bg-slate-950 pl-8 pr-3 py-1.5 text-xs text-slate-100 focus:border-sky-400/60 focus:outline-none"
           />
         </div>
       </div>
 
-      <div className="rounded-xl border border-[var(--color-hairline)] bg-white overflow-hidden">
-        <div className="divide-y divide-[var(--color-hairline)]/70">
+      <div className="rounded-xl border border-[var(--color-border-subtle)] bg-slate-950/60 overflow-hidden">
+        <div className="divide-y divide-slate-800/70">
           {filtered.slice(0, 120).map((run, idx) => (
             <div
               key={`${run.at}-${run.lemma_id}-${idx}`}
-              className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 text-xs hover:bg-[var(--color-paper)]/70 transition-colors"
+              className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 text-xs hover:bg-slate-900/70 transition-colors"
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 {run.accepted ? (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
                 ) : (
-                  <XCircle className="h-4 w-4 text-rose-500 shrink-0" />
+                  <XCircle className="h-4 w-4 text-rose-400 shrink-0" />
                 )}
                 <button
                   type="button"
                   onClick={() => onSelectLemma(run.lemma_id)}
-                  className="font-mono font-semibold text-stone-900 hover:underline cursor-pointer"
+                  className="font-mono font-semibold text-sky-200 hover:underline cursor-pointer"
                 >
                   {run.lemma_id}
                 </button>
-                <span className="rounded bg-stone-100 px-1.5 py-0.5 text-[10px] font-medium text-stone-600">
+                <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">
                   {run.kind === 'refute' ? 'counterexample' : 'proof'}
                 </span>
               </div>
 
-              <div className="flex items-center gap-3 text-stone-500">
+              <div className="flex items-center gap-3 text-slate-400">
                 <button
                   type="button"
                   onClick={() => onSelectSeat(run.seat)}
-                  className="hover:text-stone-900 cursor-pointer truncate max-w-40"
+                  className="hover:text-white cursor-pointer truncate max-w-40"
                 >
                   {humanizeSeat(run.seat).name}
                 </button>
-                <span className="font-mono text-[11px] text-stone-400 tabular-nums" title={fmtUtcTime(run.at)}>
+                <span
+                  className="font-mono text-[11px] text-slate-500 tabular-nums"
+                  title={fmtUtcTime(run.at)}
+                >
                   {fmtRelativeTime(run.at, nowMs)}
                 </span>
               </div>
             </div>
           ))}
         </div>
-        {filtered.length > 120 && (
-          <div className="border-t border-[var(--color-hairline)] bg-stone-50 px-4 py-2 text-center text-xs text-stone-500">
-            Showing newest 120 of {fmtNumber(filtered.length)} matching runs in the last hour.
-          </div>
-        )}
       </div>
     </div>
   );

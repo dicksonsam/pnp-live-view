@@ -1,30 +1,23 @@
-# P vs NP · Live Observatory
+# P vs NP · Visual Atlas
 
-A reader-friendly, real-time mission control for the autonomous AI agent fleet tackling the P versus NP problem at [pequalnp.com](https://pequalnp.com/live).
+An independent visual telemetry dashboard and plain-English explainer for the autonomous AI agent fleet attacking the P versus NP problem at [pequalnp.com](https://pequalnp.com/live).
 
-## What It Shows
+**Live site:** [https://dicksonsam.github.io/pnp-live-view/](https://dicksonsam.github.io/pnp-live-view/)
 
-Connects directly to the public, CORS-enabled live JSON feed at `https://data.pequalnp.com/` (auto-syncing every 30 seconds, no backend required):
+## How It Differs From pequalnp.com
 
-- **Live Situation Briefing** — Plain-English status reports written by the fleet's news desk, latest verified highlight, active agent scale (core fleet vs. external contributors), and a 60-minute Lean 4 checker heartbeat chart.
-- **Six Research Fronts ("The Battle Map")** — Compares each program's goal, direction (*P ≠ NP*, *P = NP*, or *Foundations*), lemma progress, and exact **Current Bottleneck (Hard Link)**. Click any front to inspect its step-by-step proof chain.
-- **Active vs. Dead Attack Lines** — Filterable breakdown of every strategy currently alive, supporting, stopped/refuted, or dormant, with plain-English explanations of *why* and clickable lemma chips.
-- **Campaign Momentum & Dispatches** — Daily and hourly verified vs. refuted charts alongside full plain-English editorial dispatches and published notes.
-- **Simplified Live Fleet & Deep-Dive Inspector** — Human-readable team roster replacing the raw seat graph, with a slide-over inspector drawer (with Back navigation) for Programs, Lemmas (including collapsible Lean 4 code & GitHub PR/CI links), Orchestrator Seats, Dispatches, raw inter-agent messages, and Lean checker logs.
+Streams directly from the public, CORS-enabled JSON feed at `https://data.pequalnp.com/` every 30 seconds, translating raw fleet telemetry into visual storytelling:
 
-## Running Locally
+- **Live Plain-English Verdict & 3-Step Visual Guide** — Synthesizes where the campaign really stands right now without drowning readers in jargon.
+- **Interactive SVG Architecture Map ("How P vs NP Could Be Solved")** — Visualizes all 6 research fronts, the 50-year linear circuit barrier (`L-clb-036`), the 3 classic complexity barriers (*Relativization, Natural Proofs, Algebrization*), and the parallel `P = NP` algorithm bypass.
+- **"Where All Verified Proofs Actually Went" Reality Check** — Proportional visual breakdown separating small-case circuit lab tables and textbook foundations from direct P ≠ NP theory fronts.
+- **Last 60 Minutes Activity Translator** — Categorizes raw Lean 4 checker runs into plain buckets with a 5-minute pulse chart, tucking the verbatim technical update into a secondary toggle.
+- **Six Research Fronts, Survival Radar & Deep-Dive Inspector** — Every node, front, lemma, seat, dispatch, raw message stream, and checker log opens in a slide-over inspector drawer.
+
+## Development
 
 ```bash
 npm install
 npm run dev
-```
-
-Then open [http://localhost:5173](http://localhost:5173).
-
-## Production Build & Deployment
-
-```bash
 npm run build
 ```
-
-The static bundle is generated in `dist/` and can be deployed directly to Vercel, Netlify, Cloudflare Pages, or GitHub Pages with zero server configuration.

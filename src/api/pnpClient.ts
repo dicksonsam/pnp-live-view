@@ -1,4 +1,5 @@
 import type {
+  AtlasSnapshot,
   CalendarIndex,
   CalendarMonthData,
   HeadData,
@@ -8,9 +9,7 @@ import type {
   LiveData,
   NewsArticleDetail,
   NewsIndex,
-  ObservatorySnapshot,
   OverviewMap,
-  PapersData,
   PlanData,
   ProgramNodesFile,
   SeatDetail,
@@ -66,20 +65,19 @@ export async function fetchIncident(): Promise<IncidentData | null> {
   }
 }
 
-export async function fetchObservatorySnapshot(): Promise<ObservatorySnapshot> {
+export async function fetchAtlasSnapshot(): Promise<AtlasSnapshot> {
   const [head, live, incident] = await Promise.all([
     fetchHead(),
     fetchLive(),
     fetchIncident(),
   ]);
 
-  const [map, plan, news, seats, calIndex, papers] = await Promise.all([
+  const [map, plan, news, seats, calIndex] = await Promise.all([
     getImmutable<OverviewMap>(head.files.map),
     head.files.plan ? getImmutable<PlanData>(head.files.plan).catch(() => null) : Promise.resolve(null),
     head.files.news ? getImmutable<NewsIndex>(head.files.news).catch(() => null) : Promise.resolve(null),
     head.files.seats ? getImmutable<SeatSummary[]>(head.files.seats).catch(() => []) : Promise.resolve([]),
     head.files.calendar ? getImmutable<CalendarIndex>(head.files.calendar).catch(() => null) : Promise.resolve(null),
-    head.files.papers ? getImmutable<PapersData>(head.files.papers).catch(() => null) : Promise.resolve(null),
   ]);
 
   let calendarMonth: CalendarMonthData | null = null;
@@ -98,13 +96,11 @@ export async function fetchObservatorySnapshot(): Promise<ObservatorySnapshot> {
     news,
     seats,
     calendarMonth,
-    papers,
     incident,
     fetchedAt: Date.now(),
   };
 }
 
-// ---- Lemma resolution & cleanup (mirrors pequalnp.com/js/data.js) ----
 const LETTER_TO_STATUS: Record<string, LemmaStatus> = {
   c: 'checked',
   j: 'conjecture',
